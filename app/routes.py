@@ -22,7 +22,7 @@ DATA_URL_RE = re.compile(r"^data:image/(\w+);base64,(.+)$")
 
 @bp.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", active_page="registrar")
 
 
 @bp.route("/ocr", methods=["POST"])
@@ -100,6 +100,7 @@ def registrar():
             "index.html",
             form_data=form,
             foto_url=foto_url,
+            active_page="registrar",
         ), 400
 
     registro = Registro(
@@ -141,7 +142,13 @@ def _filtered_registros(args):
 @bp.route("/reportes")
 def reportes():
     registros, desde, hasta = _filtered_registros(request.args)
-    return render_template("reportes.html", registros=registros, desde=desde, hasta=hasta)
+    return render_template(
+        "reportes.html",
+        registros=registros,
+        desde=desde,
+        hasta=hasta,
+        active_page="reportes",
+    )
 
 
 @bp.route("/exportar")
