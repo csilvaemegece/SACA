@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Reportes · SACA{% endblock %}
+
+{% block content %}
+<h1>Reporte de registros</h1>
+
+<form method="get" action="{{ url_for('main.reportes') }}" class="filtro-form">
+  <label for="desde">Desde</label>
+  <input type="date" id="desde" name="desde" value="{{ desde }}">
+
+  <label for="hasta">Hasta</label>
+  <input type="date" id="hasta" name="hasta" value="{{ hasta }}">
+
+  <button type="submit" class="btn btn-secondary">Filtrar</button>
+  <a class="btn btn-primary"
+     href="{{ url_for('main.exportar', desde=desde, hasta=hasta) }}">Exportar a Excel</a>
+</form>
+
+<p class="hint">{{ registros|length }} registro(s) encontrado(s).</p>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Foto</th>
+        <th>Apellidos</th>
+        <th>Nombres</th>
+        <th>RUT</th>
+        <th>Fecha nacimiento</th>
+        <th>Edad</th>
+        <th>Email</th>
+        <th>Teléfono</th>
+        <th>Fecha de registro</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in registros %}
+      <tr>
+        <td>
+          {% if r.foto_filename %}
+          <a href="{{ url_for('main.uploaded_file', filename=r.foto_filename) }}" target="_blank">
+            <img class="thumb" src="{{ url_for('main.uploaded_file', filename=r.foto_filename) }}" alt="Cédula de {{ r.nombres }}">
+          </a>
+          {% else %}
+          &mdash;
+          {% endif %}
+        </td>
+        <td>{{ r.apellidos }}</td>
+        <td>{{ r.nombres }}</td>
+        <td>{{ r.rut }}</td>
+        <td>{{ r.fecha_nacimiento.strftime('%d-%m-%Y') if r.fecha_nacimiento else '' }}</td>
+        <td>{{ r.edad }}</td>
+        <td>{{ r.email or '' }}</td>
+        <td>{{ r.telefono or '' }}</td>
+        <td>{{ r.fecha_registro.strftime('%d-%m-%Y %H:%M') if r.fecha_registro else '' }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" class="empty">Aún no hay registros{{ ' en este rango de fechas' if desde or hasta else '' }}.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

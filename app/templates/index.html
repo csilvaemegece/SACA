@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Registrar · SACA{% endblock %}
+
+{% block content %}
+<h1>Registrar adulto mayor</h1>
+<p class="hint">
+  Toma una foto de la cédula de identidad con la cámara. El sistema intentará leer
+  automáticamente el nombre, apellido, RUT y fecha de nacimiento &mdash; revisa siempre
+  los datos contra la foto antes de guardar.
+</p>
+
+<div class="registro-grid">
+  <section class="camera-panel">
+    <h2>1. Foto del documento</h2>
+
+    <div id="camera-wrap" class="camera-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <img id="preview" class="hidden" alt="Foto capturada de la cédula">
+    </div>
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <div id="camera-error" class="flash flash-error hidden"></div>
+
+    <div class="camera-actions">
+      <button type="button" id="btn-capture" class="btn btn-primary">Capturar foto</button>
+      <button type="button" id="btn-retake" class="btn btn-secondary hidden">Tomar otra foto</button>
+    </div>
+
+    <p id="ocr-status" class="hint hidden"></p>
+  </section>
+
+  <section class="form-panel">
+    <h2>2. Datos del registro</h2>
+    <form id="registro-form" method="post" action="{{ url_for('main.registrar') }}">
+      <input type="hidden" name="foto_filename" id="foto_filename"
+             value="{{ form_data.foto_filename if form_data else '' }}">
+
+      <label for="apellidos">Apellidos *</label>
+      <input type="text" name="apellidos" id="apellidos" required
+             value="{{ form_data.apellidos if form_data else '' }}">
+
+      <label for="nombres">Nombres *</label>
+      <input type="text" name="nombres" id="nombres" required
+             value="{{ form_data.nombres if form_data else '' }}">
+
+      <label for="rut">RUT *</label>
+      <input type="text" name="rut" id="rut" required placeholder="12.345.678-9"
+             value="{{ form_data.rut if form_data else '' }}">
+      <span id="rut-hint" class="field-hint"></span>
+
+      <label for="fecha_nacimiento">Fecha de nacimiento *</label>
+      <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" required
+             value="{{ form_data.fecha_nacimiento if form_data else '' }}">
+      <span id="edad-hint" class="field-hint"></span>
+
+      <label for="email">Email</label>
+      <input type="email" name="email" id="email"
+             value="{{ form_data.email if form_data else '' }}">
+
+      <label for="telefono">Teléfono</label>
+      <input type="tel" name="telefono" id="telefono" placeholder="+56 9 1234 5678"
+             value="{{ form_data.telefono if form_data else '' }}">
+
+      <button type="submit" class="btn btn-primary btn-block">Guardar registro</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.SACA_INITIAL_FOTO_URL = {{ (foto_url or "") | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/capture.js') }}"></script>
+{% endblock %}
