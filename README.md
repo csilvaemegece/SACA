@@ -38,19 +38,28 @@ pip install -r requirements.txt
 
 ## Ejecución
 
+Para desarrollo (servidor de Flask):
+
 ```bash
-python3 app.py
+python3 wsgi.py
 ```
 
-La app queda disponible en `http://localhost:5000`. La captura de cámara
-requiere HTTPS o `localhost` (restricción de los navegadores para
-`getUserMedia`); si se va a usar en otro computador de la red, hay que
-servirla detrás de HTTPS.
+Para producción / como servicio (Waitress, igual que el resto de S.A.C.A.):
+
+```bash
+python3 -m waitress --host=0.0.0.0 --port=5002 --threads=4 wsgi:app
+```
+
+La app queda disponible en `http://localhost:5002` (o el puerto que uses).
+La captura de cámara requiere HTTPS o `localhost` (restricción de los
+navegadores para `getUserMedia`); si se va a usar en otro computador de la
+red, hay que servirla detrás de HTTPS.
 
 ## Estructura
 
 ```
-app.py              # punto de entrada
+wsgi.py              # punto de entrada WSGI (no se llama app.py para no
+                      # chocar con el paquete app/ al hacer "wsgi:app")
 config.py           # configuración (rutas, base de datos)
 app/
   __init__.py        # app factory (Flask + SQLAlchemy)
