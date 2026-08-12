@@ -237,6 +237,35 @@ h1, h2 { color: #ffffff; }
   display: block;
 }
 
+.capture-guide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  pointer-events: none;
+}
+
+.capture-guide-frame {
+  width: 82%;
+  aspect-ratio: 85.6 / 54;
+  border: 2px dashed rgba(255, 255, 255, 0.75);
+  border-radius: 14px;
+  box-shadow: 0 0 0 999px rgba(5, 7, 13, 0.45);
+}
+
+.capture-guide-label {
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  background: rgba(5, 7, 13, 0.55);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
 .hidden { display: none !important; }
 
 .camera-actions {
@@ -394,4 +423,38 @@ tbody tr:last-child td { border-bottom: none; }
   text-align: center;
   color: var(--text-muted);
   white-space: normal;
+}
+
+/* Badges */
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.badge-ok { background: var(--success-bg); color: var(--success); }
+.badge-off { background: rgba(136, 148, 171, 0.14); color: var(--text-muted); }
+
+.btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+
+/* Select inputs (match text inputs) */
+
+select {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }

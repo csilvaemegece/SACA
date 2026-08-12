@@ -12,7 +12,7 @@ from flask import (Blueprint, current_app, flash, jsonify, redirect,
 from openpyxl.utils import get_column_letter
 
 from app import db
-from app.models import Registro
+from app.models import MotivoVisita, Registro
 from app.ocr_parser import parse_cedula, validar_run
 
 bp = Blueprint("main", __name__)
@@ -22,7 +22,8 @@ DATA_URL_RE = re.compile(r"^data:image/(\w+);base64,(.+)$")
 
 @bp.route("/")
 def index():
-    return render_template("index.html", active_page="registrar")
+    motivos = MotivoVisita.query.filter_by(activo=True).order_by(MotivoVisita.nombre).all()
+    return render_template("index.html", active_page="registrar", motivos=motivos)
 
 
 @bp.route("/ocr", methods=["POST"])
@@ -70,6 +71,7 @@ def registrar():
     email = form.get("email", "").strip()
     telefono = form.get("telefono", "").strip()
     foto_filename = form.get("foto_filename", "").strip()
+    motivo_visita_id_raw = form.get("motivo_visita_id", "").strip()
 
     errors = []
     if not nombres:
@@ -80,6 +82,14 @@ def registrar():
         errors.append("El RUT es obligatorio.")
     elif not validar_run(rut):
         errors.append("El RUT ingresado no es válido, revísalo.")
+
+    motivo = None
+    if not motivo_visita_id_raw:
+        errors.append("El motivo de la visita es obligatorio.")
+    else:
+        motivo = MotivoVisita.query.get(motivo_visita_id_raw)
+        if motivo is None:
+            errors.append("El motivo de la visita seleccionado no es válido.")
 
     fecha_nacimiento = None
     if not fecha_nacimiento_raw:
@@ -96,11 +106,13 @@ def registrar():
         for e in errors:
             flash(e, "error")
         foto_url = url_for("main.uploaded_file", filename=foto_filename) if foto_filename else ""
+        motivos = MotivoVisita.query.filter_by(activo=True).order_by(MotivoVisita.nombre).all()
         return render_template(
             "index.html",
             form_data=form,
             foto_url=foto_url,
             active_page="registrar",
+            motivos=motivos,
         ), 400
 
     registro = Registro(
@@ -111,6 +123,7 @@ def registrar():
         email=email or None,
         telefono=telefono or None,
         foto_filename=foto_filename or None,
+        motivo_visita_id=motivo.id,
     )
     db.session.add(registro)
     db.session.commit()
@@ -159,7 +172,7 @@ def exportar():
     ws = wb.active
     ws.title = "Registros"
     headers = ["Nombres", "Apellidos", "RUT", "Fecha de nacimiento", "Edad",
-               "Email", "Teléfono", "Fecha de registro"]
+               "Motivo de la visita", "Email", "Teléfono", "Fecha de registro"]
     ws.append(headers)
     for r in registros:
         ws.append([
@@ -168,6 +181,7 @@ def exportar():
             r.rut,
             r.fecha_nacimiento.strftime("%d-%m-%Y") if r.fecha_nacimiento else "",
             r.edad,
+            r.motivo.nombre if r.motivo else "",
             r.email or "",
             r.telefono or "",
             r.fecha_registro.strftime("%d-%m-%Y %H:%M") if r.fecha_registro else "",
@@ -185,3 +199,33 @@ def exportar():
         download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+@bp.route("/configuracion")
+def configuracion():
+    motivos = MotivoVisita.query.order_by(MotivoVisita.nombre).all()
+    return render_template("configuracion.html", motivos=motivos, active_page="configuracion")
+
+
+@bp.route("/configuracion/motivos", methods=["POST"])
+def motivos_agregar():
+    nombre = request.form.get("nombre", "").strip()
+    if not nombre:
+        flash("El nombre del motivo no puede estar vacío.", "error")
+    elif MotivoVisita.query.filter(db.func.lower(MotivoVisita.nombre) == nombre.lower()).first():
+        flash(f"Ya existe un motivo llamado «{nombre}».", "error")
+    else:
+        db.session.add(MotivoVisita(nombre=nombre, activo=True))
+        db.session.commit()
+        flash(f"Motivo «{nombre}» agregado.", "success")
+    return redirect(url_for("main.configuracion"))
+
+
+@bp.route("/configuracion/motivos/<int:motivo_id>/alternar", methods=["POST"])
+def motivos_alternar(motivo_id):
+    motivo = MotivoVisita.query.get_or_404(motivo_id)
+    motivo.activo = not motivo.activo
+    db.session.commit()
+    estado = "activado" if motivo.activo else "desactivado"
+    flash(f"Motivo «{motivo.nombre}» {estado}.", "success")
+    return redirect(url_for("main.configuracion"))

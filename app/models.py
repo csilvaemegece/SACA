@@ -3,6 +3,17 @@ from datetime import date, datetime
 from app import db
 
 
+class MotivoVisita(db.Model):
+    __tablename__ = "motivos_visita"
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(120), nullable=False, unique=True)
+    activo = db.Column(db.Boolean, nullable=False, default=True)
+
+    def __repr__(self):
+        return self.nombre
+
+
 class Registro(db.Model):
     __tablename__ = "registros"
 
@@ -14,7 +25,10 @@ class Registro(db.Model):
     email = db.Column(db.String(120), nullable=True)
     telefono = db.Column(db.String(30), nullable=True)
     foto_filename = db.Column(db.String(255), nullable=True)
+    motivo_visita_id = db.Column(db.Integer, db.ForeignKey("motivos_visita.id"), nullable=True)
     fecha_registro = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    motivo = db.relationship("MotivoVisita")
 
     @property
     def edad(self):
@@ -37,5 +51,6 @@ class Registro(db.Model):
             "email": self.email,
             "telefono": self.telefono,
             "foto_filename": self.foto_filename,
+            "motivo_visita": self.motivo.nombre if self.motivo else None,
             "fecha_registro": self.fecha_registro.isoformat() if self.fecha_registro else None,
         }

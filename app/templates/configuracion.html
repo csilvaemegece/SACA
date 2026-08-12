@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Configuración · SACA{% endblock %}
+{% block breadcrumb %}Configuración{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>Configuración</h1>
+  <p class="page-sub">Motivos de visita disponibles en el formulario de registro.</p>
+</div>
+
+<section class="panel">
+  <h2>Agregar motivo</h2>
+  <form method="post" action="{{ url_for('main.motivos_agregar') }}" class="filtro-form">
+    <div class="field-inline" style="flex: 1; min-width: 240px;">
+      <label for="nombre">Nombre del motivo</label>
+      <input type="text" id="nombre" name="nombre" placeholder="Ej: Retiro de documentos" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Agregar</button>
+  </form>
+</section>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Motivo</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in motivos %}
+      <tr>
+        <td>{{ m.nombre }}</td>
+        <td>
+          {% if m.activo %}
+          <span class="badge badge-ok">Activo</span>
+          {% else %}
+          <span class="badge badge-off">Inactivo</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('main.motivos_alternar', motivo_id=m.id) }}">
+            <button type="submit" class="btn btn-secondary btn-sm">
+              {{ 'Desactivar' if m.activo else 'Activar' }}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="3" class="empty">No hay motivos configurados todavía.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<p class="hint" style="margin-top: 12px;">
+  Los motivos desactivados dejan de aparecer en el formulario de registro, pero se conservan
+  en los registros ya guardados que los usaron.
+</p>
+{% endblock %}

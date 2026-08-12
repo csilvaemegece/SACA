@@ -42,6 +42,7 @@
         <th>RUT</th>
         <th>Fecha nacimiento</th>
         <th>Edad</th>
+        <th>Motivo</th>
         <th>Email</th>
         <th>Teléfono</th>
         <th>Fecha de registro</th>
@@ -64,13 +65,14 @@
         <td>{{ r.rut }}</td>
         <td>{{ r.fecha_nacimiento.strftime('%d-%m-%Y') if r.fecha_nacimiento else '' }}</td>
         <td>{{ r.edad }}</td>
+        <td>{{ r.motivo.nombre if r.motivo else '—' }}</td>
         <td>{{ r.email or '' }}</td>
         <td>{{ r.telefono or '' }}</td>
         <td>{{ r.fecha_registro.strftime('%d-%m-%Y %H:%M') if r.fecha_registro else '' }}</td>
       </tr>
       {% else %}
       <tr>
-        <td colspan="9" class="empty">Aún no hay registros{{ ' en este rango de fechas' if desde or hasta else '' }}.</td>
+        <td colspan="10" class="empty">Aún no hay registros{{ ' en este rango de fechas' if desde or hasta else '' }}.</td>
       </tr>
       {% endfor %}
     </tbody>

@@ -4,6 +4,7 @@
   const video = document.getElementById("video");
   const preview = document.getElementById("preview");
   const canvas = document.getElementById("canvas");
+  const captureGuide = document.getElementById("capture-guide");
   const cameraError = document.getElementById("camera-error");
   const ocrStatus = document.getElementById("ocr-status");
 
@@ -34,6 +35,7 @@
     clearError();
     preview.classList.add("hidden");
     video.classList.remove("hidden");
+    captureGuide.classList.remove("hidden");
     btnCapture.classList.remove("hidden");
     btnRetake.classList.add("hidden");
 
@@ -130,6 +132,7 @@
     preview.src = dataUrl;
     preview.classList.remove("hidden");
     video.classList.add("hidden");
+    captureGuide.classList.add("hidden");
     btnCapture.classList.add("hidden");
     btnRetake.classList.remove("hidden");
     stopCamera();
@@ -179,6 +182,7 @@
     preview.src = window.SACA_INITIAL_FOTO_URL;
     preview.classList.remove("hidden");
     video.classList.add("hidden");
+    captureGuide.classList.add("hidden");
     btnCapture.classList.add("hidden");
     btnRetake.classList.remove("hidden");
   } else if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {

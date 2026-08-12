@@ -17,6 +17,10 @@
     <div id="camera-wrap" class="camera-wrap">
       <video id="video" autoplay playsinline muted></video>
       <img id="preview" class="hidden" alt="Foto capturada de la cédula">
+      <div id="capture-guide" class="capture-guide">
+        <div class="capture-guide-frame"></div>
+        <div class="capture-guide-label">Centra el carnet dentro del marco</div>
+      </div>
     </div>
     <canvas id="canvas" class="hidden"></canvas>
 
@@ -53,6 +57,24 @@
       <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" required
              value="{{ form_data.fecha_nacimiento if form_data else '' }}">
       <span id="edad-hint" class="field-hint"></span>
+
+      <label for="motivo_visita_id">Motivo de la visita *</label>
+      <select name="motivo_visita_id" id="motivo_visita_id" required>
+        <option value="" disabled {{ 'selected' if not (form_data and form_data.motivo_visita_id) }}>
+          Selecciona un motivo…
+        </option>
+        {% for m in motivos %}
+        <option value="{{ m.id }}"
+          {{ 'selected' if form_data and form_data.motivo_visita_id|string == m.id|string }}>
+          {{ m.nombre }}
+        </option>
+        {% endfor %}
+      </select>
+      {% if not motivos %}
+      <span class="field-hint warn">
+        No hay motivos configurados — agrégalos en <a href="{{ url_for('main.configuracion') }}">Configuración</a>.
+      </span>
+      {% endif %}
 
       <label for="email">Email</label>
       <input type="email" name="email" id="email"
