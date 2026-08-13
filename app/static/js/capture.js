@@ -178,6 +178,16 @@
   fieldRut.addEventListener("input", actualizarRutHint);
   fieldFecha.addEventListener("input", actualizarEdadHint);
 
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    if (video.classList.contains("hidden")) return;
+    const activo = document.activeElement;
+    const estaEscribiendo = activo && ["INPUT", "TEXTAREA", "SELECT"].includes(activo.tagName);
+    if (estaEscribiendo) return;
+    e.preventDefault();
+    capturar();
+  });
+
   if (window.SACA_INITIAL_FOTO_URL) {
     preview.src = window.SACA_INITIAL_FOTO_URL;
     preview.classList.remove("hidden");
