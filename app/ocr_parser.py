@@ -8,6 +8,7 @@ funcionario revise y corrija antes de guardar.
 """
 
 import re
+import unicodedata
 
 import pytesseract
 from PIL import Image, ImageFilter, ImageOps
@@ -22,6 +23,24 @@ FECHA_RE = re.compile(r"(\d{1,2})\s+([A-ZÑ]{3,4})\.?\s+(\d{4})")
 
 STOP_LABELS_NOMBRES = ("NOMBRES", "NACIONALIDAD", "SEXO", "REPUBLICA", "REPÚBLICA")
 STOP_LABELS_APELLIDOS = ("APELLIDOS",)
+
+# Palabras del "boilerplate" del carnet (nacionalidades y etiquetas) que a veces
+# el OCR arrastra junto al nombre cuando no reconoce bien la etiqueta que las
+# antecede (ej. "NACIONALIDAD" mal leída). Nunca son parte de un nombre real,
+# así que se descartan aunque hayan quedado pegadas al resto del texto.
+PALABRAS_NO_NOMBRE = {
+    "CHILENA", "CHILENO", "EXTRANJERA", "EXTRANJERO",
+    "NACIONALIDAD", "SEXO", "REPUBLICA", "CHILE",
+    "CEDULA", "IDENTIDAD", "SERVICIO", "REGISTRO", "CIVIL",
+    "IDENTIFICACION", "DOCUMENTO", "NUMERO", "FECHA",
+    "NACIMIENTO", "EMISION", "VENCIMIENTO", "FIRMA", "TITULAR",
+    "APELLIDOS", "NOMBRES", "NOFIRMA",
+}
+
+
+def _sin_acentos(texto: str) -> str:
+    normalizado = unicodedata.normalize("NFD", texto)
+    return "".join(c for c in normalizado if unicodedata.category(c) != "Mn")
 
 
 def _preprocess_variants(image: Image.Image):
@@ -66,9 +85,17 @@ def _clean_edges(candidate: str) -> str:
     return candidate
 
 
+def _es_palabra_valida(palabra: str) -> bool:
+    letras = re.sub(r"[^A-ZÁÉÍÓÚÑ]", "", palabra)
+    if len(letras) < 3:
+        return False
+    return _sin_acentos(letras) not in PALABRAS_NO_NOMBRE
+
+
 def _strip_short_words(text: str) -> str:
-    """Descarta palabras sueltas de 1-2 letras (ruido típico del OCR)."""
-    words = [w for w in text.split() if len(re.sub(r"[^A-ZÁÉÍÓÚÑ]", "", w)) >= 3]
+    """Descarta palabras sueltas de 1-2 letras y términos que no son nombres
+    (nacionalidad, etiquetas del carnet, etc.) -- ruido típico del OCR."""
+    words = [w for w in text.split() if _es_palabra_valida(w)]
     return " ".join(words)
 
 
