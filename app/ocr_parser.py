@@ -43,25 +43,77 @@ def _sin_acentos(texto: str) -> str:
     return "".join(c for c in normalizado if unicodedata.category(c) != "Mn")
 
 
+def _factor_escala(w: int, h: int) -> int:
+    """Cámaras de baja resolución entregan carnets con muy pocos píxeles por
+    letra -- mientras más chica la foto, más hay que agrandarla para que
+    Tesseract tenga margen para reconocer los caracteres."""
+    lado_mayor = max(w, h)
+    if lado_mayor < 900:
+        return 4
+    if lado_mayor < 1400:
+        return 3
+    if lado_mayor < 2200:
+        return 2
+    return 1
+
+
+def _umbral_otsu(imagen_gris: Image.Image) -> int:
+    """Umbral de binarización de Otsu, calculado a mano sobre el histograma
+    (sin depender de numpy/opencv) -- separa texto de fondo incluso con
+    contraste parejo o sombras, mejor que un umbral fijo."""
+    hist = imagen_gris.histogram()
+    total = sum(hist)
+    if total == 0:
+        return 127
+    suma_total = sum(i * c for i, c in enumerate(hist))
+
+    peso_fondo = 0
+    suma_fondo = 0
+    mejor_varianza = -1.0
+    mejor_umbral = 127
+
+    for i, c in enumerate(hist):
+        peso_fondo += c
+        if peso_fondo == 0:
+            continue
+        peso_frente = total - peso_fondo
+        if peso_frente == 0:
+            break
+        suma_fondo += i * c
+        media_fondo = suma_fondo / peso_fondo
+        media_frente = (suma_total - suma_fondo) / peso_frente
+        varianza_entre = peso_fondo * peso_frente * (media_fondo - media_frente) ** 2
+        if varianza_entre > mejor_varianza:
+            mejor_varianza = varianza_entre
+            mejor_umbral = i
+
+    return mejor_umbral
+
+
 def _preprocess_variants(image: Image.Image):
-    """Genera un par de versiones preprocesadas de la imagen para intentar el OCR."""
+    """Genera varias versiones preprocesadas de la imagen para intentar el OCR,
+    pensadas para tolerar cámaras de baja resolución/borrosas."""
     base = image.convert("RGB")
     gray = ImageOps.grayscale(base)
+    w, h = gray.size
+    scale = _factor_escala(w, h)
 
     variants = [gray]
 
     contrast = ImageOps.autocontrast(gray, cutoff=1)
-    w, h = contrast.size
-    scale = 2 if max(w, h) < 2200 else 1
     upscaled = contrast.resize((w * scale, h * scale), Image.LANCZOS)
-    sharpened = upscaled.filter(ImageFilter.SHARPEN)
+    sharpened = upscaled.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
     variants.append(sharpened)
+
+    umbral = _umbral_otsu(contrast)
+    binarizada = upscaled.point(lambda p: 255 if p > umbral else 0)
+    variants.append(binarizada)
 
     return variants
 
 
-def _ocr_text(image: Image.Image, lang: str = "spa") -> str:
-    config = "--psm 6"
+def _ocr_text(image: Image.Image, lang: str = "spa", psm: str = "6") -> str:
+    config = f"--psm {psm}"
     return pytesseract.image_to_string(image, lang=lang, config=config)
 
 
@@ -147,10 +199,39 @@ def _extract_backward(lines, anchor_labels, stop_labels, max_lines=2):
 
 
 def _best_candidate(*candidates):
+    """Combina varias lecturas del mismo campo (una por variante de OCR).
+
+    Antes se usaba la que tuviera más palabras, pero una variante ruidosa
+    (típico con fotos de baja resolución) a veces agrega una palabra de
+    ruido al final y terminaba "ganando" por ser la más larga. En cambio,
+    se busca el prefijo de palabras más largo que compartan al menos dos
+    variantes -- si dos lecturas independientes coinciden, es mucho más
+    probable que sea el nombre real que una palabra extra que solo
+    apareció en una pasada.
+    """
     cleaned = [_strip_short_words(c) for c in candidates if c]
+    cleaned = [c for c in cleaned if c]
     if not cleaned:
         return ""
-    return max(cleaned, key=lambda c: len(c.split()))
+    if len(cleaned) == 1:
+        return cleaned[0]
+
+    listas = [c.split() for c in cleaned]
+    largo_max = max(len(p) for p in listas)
+
+    for largo in range(largo_max, 0, -1):
+        conteo = {}
+        for palabras in listas:
+            if len(palabras) >= largo:
+                clave = tuple(palabras[:largo])
+                conteo[clave] = conteo.get(clave, 0) + 1
+        coincidencias = [clave for clave, n in conteo.items() if n >= 2]
+        if coincidencias:
+            return " ".join(max(coincidencias, key=len))
+
+    # Ninguna variante coincide con otra -- nos quedamos con la más corta,
+    # que arriesga menos que sumar palabras no confirmadas por nadie más.
+    return min(cleaned, key=lambda c: len(c.split()))
 
 
 def _extract_run(text: str) -> str:

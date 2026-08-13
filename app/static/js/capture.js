@@ -1,6 +1,9 @@
 (function () {
   "use strict";
 
+  // Debe coincidir con "aspect-ratio: 4 / 3" de .camera-wrap en style.css.
+  const CAMERA_WRAP_ASPECT = 4 / 3;
+
   const video = document.getElementById("video");
   const preview = document.getElementById("preview");
   const canvas = document.getElementById("canvas");
@@ -41,7 +44,7 @@
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 960 } },
+        video: { width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
       video.srcObject = stream;
@@ -124,10 +127,33 @@
     const w = video.videoWidth;
     const h = video.videoHeight;
     if (!w || !h) return;
-    canvas.width = w;
-    canvas.height = h;
-    canvas.getContext("2d").drawImage(video, 0, 0, w, h);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+
+    // El recuadro en pantalla es 4:3 con object-fit:cover, que recorta el
+    // video para llenar la caja. Replicamos ese mismo recorte acá para no
+    // mandar al OCR partes del sensor que el usuario nunca vio (y que por
+    // lo tanto no alineó con el marco guía) -- con cámaras de baja
+    // resolución, cada píxel enviado cuenta.
+    const srcAspect = w / h;
+    let visibleW = w;
+    let visibleH = h;
+    let offsetX = 0;
+    let offsetY = 0;
+    if (srcAspect > CAMERA_WRAP_ASPECT) {
+      visibleW = h * CAMERA_WRAP_ASPECT;
+      offsetX = (w - visibleW) / 2;
+    } else if (srcAspect < CAMERA_WRAP_ASPECT) {
+      visibleH = w / CAMERA_WRAP_ASPECT;
+      offsetY = (h - visibleH) / 2;
+    }
+
+    canvas.width = visibleW;
+    canvas.height = visibleH;
+    canvas.getContext("2d").drawImage(
+      video,
+      offsetX, offsetY, visibleW, visibleH,
+      0, 0, visibleW, visibleH
+    );
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
 
     preview.src = dataUrl;
     preview.classList.remove("hidden");

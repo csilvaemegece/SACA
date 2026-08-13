@@ -249,7 +249,7 @@ h1, h2 { color: #ffffff; }
 }
 
 .capture-guide-frame {
-  width: 82%;
+  width: 90%;
   aspect-ratio: 85.6 / 54;
   border: 2px dashed rgba(255, 255, 255, 0.75);
   border-radius: 14px;
