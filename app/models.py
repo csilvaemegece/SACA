@@ -26,7 +26,7 @@ class Registro(db.Model):
     telefono = db.Column(db.String(30), nullable=True)
     foto_filename = db.Column(db.String(255), nullable=True)
     motivo_visita_id = db.Column(db.Integer, db.ForeignKey("motivos_visita.id"), nullable=True)
-    fecha_registro = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    fecha_registro = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
     motivo = db.relationship("MotivoVisita")
 
