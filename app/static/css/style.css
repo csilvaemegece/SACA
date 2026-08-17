@@ -266,6 +266,21 @@ h1, h2 { color: #ffffff; }
   border-radius: 999px;
 }
 
+.shutter-flash {
+  position: fixed;
+  inset: 0;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transition: opacity 220ms ease-out;
+}
+
+.shutter-flash.active {
+  opacity: 1;
+  transition: opacity 0ms;
+}
+
 .hidden { display: none !important; }
 
 .camera-actions {

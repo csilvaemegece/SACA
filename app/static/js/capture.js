@@ -8,6 +8,7 @@
   const preview = document.getElementById("preview");
   const canvas = document.getElementById("canvas");
   const captureGuide = document.getElementById("capture-guide");
+  const shutterFlash = document.getElementById("shutter-flash");
   const cameraError = document.getElementById("camera-error");
   const ocrStatus = document.getElementById("ocr-status");
 
@@ -123,10 +124,21 @@
     edadHint.textContent = `${edad} años` + (edad < 60 ? " · no cumple el rango habitual de adulto mayor" : "");
   }
 
+  function dispararFlash() {
+    shutterFlash.classList.add("active");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        shutterFlash.classList.remove("active");
+      });
+    });
+  }
+
   function capturar() {
     const w = video.videoWidth;
     const h = video.videoHeight;
     if (!w || !h) return;
+
+    dispararFlash();
 
     // El recuadro en pantalla es 4:3 con object-fit:cover, que recorta el
     // video para llenar la caja. Replicamos ese mismo recorte acá para no
